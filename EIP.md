@@ -121,6 +121,14 @@ Therefore, this signing scheme does not weaken the overall security.
 > BIP-340
 
 TODO: Need domain separator for Schnorr scheme?  `EIP_XXXX_SCHNORR_SCHEME_DOMAIN_HASH`
+TODO: Can also be defined via r1. Need curve in domain separator?
+```
+EIP_XXX_DOMAIN_HASH_SECP256K1;
+EIP_XXX_DOMAIN_HASH_SECP256R1;
+```
+
+Why nonce deterministic still? Because implementation would use deterministic anyway, leading
+to same issues in real life.
 
 Note that deterministic nonce derivation is defined as part of the scheme. This is to prevent randomness issues.
 TODO: Need to study EdDSA more.
@@ -180,7 +188,7 @@ N  = Qr * Pkₓ⁻¹                                                         | Q
 
 ## Serialization
 
-The Schnorr signatures is encoded as `(signatures, commitment)` leading to 32+20=52 bytes length.
+The Schnorr signatures are encoded as `(signatures, commitment)` leading to 32+20=52 bytes length.
 
 Note that verification also needs the public key. Encoding SHOULD be via SEC. Both, uncompressed (65 bytes) and compressed (33 bytes) can be used.
 For reference, see `crysol`.
