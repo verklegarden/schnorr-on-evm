@@ -2,9 +2,21 @@
 
 This document specifies a Schnorr signature scheme over the secp256k1 elliptic curve in combination with the keccak256 hash function.
 
-TODO: A reference implementation is provided in `crysol`.
+> NOTE
+>
+> A reference implementation is provided in [verklegarden/crysol](https://github.com/verklegarden/crysol)
 
 ## Introduction
+
+Ethereum's EOA addresses are based on ECDSA signatures. However, on the application level it is totally fine to use different cryptographic systems, such as different elliptic curves or signature schemes.
+
+Examples:
+- secp256r1 precompile
+- BLS12-381 precompiles and BLS signature algorithm
+
+However, each have issues:
+- ECDSA -> many... (nonce creation, malleability, non-provable)
+- BLS -> expensive, pairing assumption
 
 Schnorr signatures provide a number of advantages compared to ECDSA signatures:
 
@@ -12,9 +24,13 @@ Schnorr signatures provide a number of advantages compared to ECDSA signatures:
 - **Non-malleability**: Schnorr signatures are non-malleable
 - **Linearity**: Schnorr signatures have multi-signature support, ie they provide a mechanism for collaborating parties to produce a signature that is valid over the sum of their public keys
 
+Also they are heavily used by Bitcoin, see BIP-340.
+
 ## Terminology
 
 ### Functions
+
+TODO: Need to define PublicKey=(x, y) etc
 
 - `H() :: bytes -> bytes32` - Keccak256 Function
 - `()ₓ :: Secp256k1::PublicKey -> uint` - Function returning the x coordinate of given public key
@@ -44,6 +60,12 @@ Schnorr signatures provide a number of advantages compared to ECDSA signatures:
 >
 > Modulo bias is ok, see BIP-340.
 > Note that the probability of `keccak256(sk ‖ m) ∊ {0, Q}` is negligible.
+
+> WARNING
+>
+> DON'T deterministically derive nonce just via message and secret key. In Multi-Signature schemes the message may be the same, but the challenge (`e`) is different because of a different aggregated public key.
+>
+> Therefore, either use random (see BIP-340) or also include the signer's (which may not be [x]G but something like [sum(xs)G]) public key in the hash.
 
 ```
 k ∊ [1, Q)
@@ -117,25 +139,30 @@ Therefore, this signing scheme does not weaken the overall security.
 
 ## Notes on Nonce Derivation
 
-> For example, if the rand value was computed as per RFC6979 and the same secret key is used in deterministic ECDSA with RFC6979, the signatures can leak the secret key through nonce reuse.
-> BIP-340
+> WARNING
+>
+> A secret key may sign the same message via two different schemes, eg Schnorr and ECDSA. If both nonce generations use same algorithm the secret key gets leaked via nonce reuse!
+>
+> General mechanism should be: Domain separator (?)
 
-TODO: Need domain separator for Schnorr scheme?  `EIP_XXXX_SCHNORR_SCHEME_DOMAIN_HASH`
-TODO: Can also be defined via r1. Need curve in domain separator?
+BIP-340: "For example, if the rand value was computed as per RFC6979 and the same secret key is used in deterministic ECDSA with RFC6979, the signatures can leak the secret key through nonce reuse."
+
+TODO: Do we also need curve inside of domain hash? What if Schnorr used on r1?
 ```
 EIP_XXX_DOMAIN_HASH_SECP256K1;
 EIP_XXX_DOMAIN_HASH_SECP256R1;
 ```
 
-Why nonce deterministic still? Because implementation would use deterministic anyway, leading
-to same issues in real life.
+Why nonce deterministic still? Because implementation would use deterministic anyway, leading to same issues in real life!
 
-Note that deterministic nonce derivation is defined as part of the scheme. This is to prevent randomness issues.
-TODO: Need to study EdDSA more.
-RFC-6979 is too heavy for Ethereum bc it uses a generic hash function.
+Note that deterministic nonce derivation is defined as part of the scheme (?) This is to prevent randomness issues.
 
-Introduces bias, but is acceptable for k1, see BIP-340.
-TODO: However, is also ok for r1?
+> WARNING
+>
+> A nonce may be biased from modulo operation if only from a 256 bit hash.
+> For k1 its ok (see BIP-340) and (I guess :D) for r1 too.
+
+Ethereum does not provide easy access to >256 bit hashes. Could rehash?
 
 ## Notes on `ecrecover` Usage
 
@@ -188,10 +215,17 @@ N  = Qr * Pkₓ⁻¹                                                         | Q
 
 ## Serialization
 
-The Schnorr signatures are encoded as `(signatures, commitment)` leading to 32+20=52 bytes length.
+The Schnorr signatures are encoded as `(signatures, commitment)` leading to `32 + 20 = 52` bytes length.
 
-Note that verification also needs the public key. Encoding SHOULD be via SEC. Both, uncompressed (65 bytes) and compressed (33 bytes) can be used.
-For reference, see `crysol`.
+This is not a word boundary. Should have prefix byte?
+
+> NOTE
+>
+> The verification process needs the signer's (may be aggregated) public key. It could come from storage, calldata... whatever.
+>
+> The encoding SHOULD generally be via SEC's uncompressed (65 bytes) or compressed (33 bytes) standard.
+
+For both encoding `crysol` has an implementation. TODO: Make benchmarks.
 
 
 <!--- References --->
