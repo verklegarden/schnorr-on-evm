@@ -1,12 +1,24 @@
-# EIP-XXXX A Schnorr signature scheme for Ethereum
+# EIP-XXXX A Schnorr Signature Scheme for Ethereum
 
-This document specifies a Schnorr signature scheme over the secp256k1 elliptic curve in combination with the keccak256 hash function.
+This document specifies an EVM-efficient Schnorr signature scheme over the secp256k1 elliptic curve in combination with the keccak256 hash function.
 
-> NOTE
->
-> A reference implementation is provided in [verklegarden/crysol](https://github.com/verklegarden/crysol)
 
-## Introduction
+## Table of Contents
+
+- [Abstract](#abstract)
+- [Motivation](#motivation)
+- [Conventions and Definitions](#conventions-and-definitions)
+- [Signature Creation](#signature-creation)
+- [Signature Verification](#signature-verification)
+- [Signature Encoding](#signature-encoding)
+- [Security Considerations](#security-considerations)
+- [Ethereum Schnorr Signed Message Digest](#ethereum-schnorr-signed-message-digest)
+- [Nonce Generation](#nonce-generation)
+- [Notes on `ecrecover` usage](#notes-on-ecrecover-usage)
+- [Reference Implementation](#reference-implementation)
+
+
+## Abstract
 
 Ethereum's EOA addresses are based on ECDSA signatures. However, on the application level it is totally fine to use different cryptographic systems, such as different elliptic curves or signature schemes.
 
@@ -18,6 +30,9 @@ However, each have issues:
 - ECDSA -> many... (nonce creation, malleability, non-provable)
 - BLS -> expensive, pairing assumption
 
+
+## Motivation
+
 Schnorr signatures provide a number of advantages compared to ECDSA signatures:
 
 - **Provable secure**: Schnorr signatures are provable secure
@@ -26,85 +41,64 @@ Schnorr signatures provide a number of advantages compared to ECDSA signatures:
 
 Also they are heavily used by Bitcoin, see BIP-340.
 
-## Terminology
 
-### Functions
+## Conventions and Definitions
 
-TODO: Need to define PublicKey=(x, y) etc
+**Types**:
+
+- `PublicKey(uint,uint)` - A secp256k1 public key (x, y), ie a point on the secp256k1 curve in Affine coordinations
+- `SecretKey(uint)` - A secp256k1 secret key, ie a secp256k1 field element
+
+**Functions**:
 
 - `H() :: bytes -> bytes32` - Keccak256 Function
-- `()ₓ :: Secp256k1::PublicKey -> uint` - Function returning the x coordinate of given public key
-- `()ₚ :: Secp256k1::PublicKey -> uint ∊ {0, 1}` - Function returning the parity of the y coordinate of given public key
-- `()ₑ :: Secp256k1::PublicKey -> address` - Function returning the Ethereum address of given public key
+- `()ₓ :: PublicKey -> uint` - Function returning the x coordinate of given public key
+- `()ₚ :: PublicKey -> uint ∊ {0, 1}` - Function returning the parity of the y coordinate of given public key
+- `()ₑ :: PublicKey -> address` - Function returning the Ethereum address of given public key
 
-### Operators
+**Operators**:
 
-- `‖` - Concatenation operator defined via `abi.encodePacked()`
+- `‖` - Concatenation operator defined as `abi.encodePacked()`
 
-### Constants
+**Constants**:
 
-- `G :: Secp256k1::PublicKey` - Generator of secp256k1
+- `G :: PublicKey` - Generator of secp256k1
 - `Q :: uint` - Order of secp256k1
 
-### Variables
+**Variables**:
 
-- `sk :: Secp256k1::SecretKey` - The signer's secret key
-- `Pk :: Secp256k1::PublicKey` - The signer's public key, ie `[sk]G`
-- `m :: bytes32` - The keccak256 hash digest to sign
+- `sk :: SecretKey` - The signer's secret key
+- `Pk :: PublicKey` - The signer's public key, ie `[sk]G`
+- `message :: bytes` - The message to be signed as bytes blob
+
+
+## Prefix Tag
+
+Schnorr signatures are tagged as _Ethereum Schnorr Signed Messages_:
+`keccak256("\x19Ethereum Schnorr Signed Message:\n32", m)`
+
 
 ## Signature Creation
 
-1. Derive a cryptographically secure nonce from `m` and `sk`.
+1. Derive the `message`'s digest `m` as specified in [Ethereum Schnorr Signed Message Digest](#ethereum-schnorr-signed-message-digest).
 
-> TODO: Current implementation uses `keccak256(sk ‖ m) % Q`.
->
+2. Select a cryptographically secure, uniformly random nonce `k` as specified in [Nonce Generation](#notes-on-nonce-derivation).
+
+3. Compute the nonce's public key `R = [k]G`.
+
+4. Construct challenge `e = H(Pkₓ ‖ Pkₚ ‖ m ‖ Rₑ) % Q`.
+
 > Modulo bias is ok, see BIP-340.
 > Note that the probability of `keccak256(sk ‖ m) ∊ {0, Q}` is negligible.
 
-> WARNING
->
-> DON'T deterministically derive nonce just via message and secret key. In Multi-Signature schemes the message may be the same, but the challenge (`e`) is different because of a different aggregated public key.
->
-> Therefore, either use random (see BIP-340) or also include the signer's (which may not be [x]G but something like [sum(xs)G]) public key in the hash.
+5. Compute `s = k + (e * sk) (mod Q)`.
 
-```
-k ∊ [1, Q)
-```
+6. Let tuple `(s, R)` be the Schnorr signature
 
-2. Compute the nonce's public key
-
-```
-R = [k]G
-```
-
-3. Derive `commitment` being the Ethereum address of the nonce's public key
-
-```
-commitment = Rₑ
-```
-
-4. Construct challenge `e`
-
-> TODO: Challenge is not modularized explicitly via Q!
->
-> Modulo bias is ok, see BIP-340.
-> Note that the probability of `keccak256(sk ‖ m) ∊ {0, Q}` is negligible.
-
-```
-e = H(Pkₓ ‖ Pkₚ ‖ m ‖ r)
-```
-
-5. Compute `signature`
-
-```
-signature = k + (e * sk) (mod Q)
-```
-
-=> Let tuple `(signature, commitment)` be the Schnorr signature
 
 ## Signature Verification
 
-* **Input**: `(Pk, m, signature, commitment)`
+* **Input**: `(Pk, m, s, R)`
 * **Output**: `True` if signature verification succeeds, `False` otherwise
 
 1. Construct challenge `e`
@@ -116,7 +110,7 @@ e = H(Pkₓ ‖ Pkₚ ‖ m ‖ r)
 2. Compute Ethereum address of nonce's public key
 
 ```
-  ([signature]G - [e]Pk)ₑ        | signature = k + (e * sk)
+  ([s]G - [e]Pk)ₑ                | s = k + (e * sk)
 = ([k + (e * sk)]G - [e]Pk)ₑ     | Pk = [sk]G
 = ([k + (e * sk)]G - [e * sk]G)ₑ | Distributive Law
 = ([k + (e * sk) - (e * sk)]G)ₑ  | (e * sk) - (e * sk) = 0
@@ -124,9 +118,25 @@ e = H(Pkₓ ‖ Pkₚ ‖ m ‖ r)
 = Rₑ
 ```
 
-3. Return `True` if `([signature]G - [e]P)ₑ == commitment`, `False` otherwise
+3. Return `True` if `([signature]G - [e]P)ₑ == Rₑ`, `False` otherwise
 
-## Security Notes
+
+## Signature Encoding
+
+The Schnorr signatures are encoded as `abi.encodePacked(s, R.x, R.y)` leading to `32 + 20 = 52` bytes length.
+
+This is not a word boundary. Should have prefix byte?
+
+> NOTE
+>
+> The verification process needs the signer's (may be aggregated) public key. It could come from storage, calldata... whatever.
+>
+> The encoding SHOULD be via SEC's uncompressed (65 bytes) or compressed (33 bytes) standard.
+
+For both encoding `crysol` has an implementation. TODO: Make benchmarks.
+
+
+## Security Considerations
 
 Note that `crysol`'s Schnorr scheme deviates slightly from the classical Schnorr signature scheme.
 
@@ -137,7 +147,11 @@ However, the difficulty of cracking a secp256k1 public key using the baby-step g
 
 Therefore, this signing scheme does not weaken the overall security.
 
-## Notes on Nonce Derivation
+
+## Ethereum Schnorr Signed Message Digest
+
+
+## Nonce Generation
 
 > WARNING
 >
@@ -163,6 +177,7 @@ Note that deterministic nonce derivation is defined as part of the scheme (?) Th
 > For k1 its ok (see BIP-340) and (I guess :D) for r1 too.
 
 Ethereum does not provide easy access to >256 bit hashes. Could rehash?
+
 
 ## Notes on `ecrecover` Usage
 
@@ -213,21 +228,12 @@ N  = Qr * Pkₓ⁻¹                                                         | Q
    = [signature]G - [e]Pk
 ```
 
-## Serialization
 
-The Schnorr signatures are encoded as `(signatures, commitment)` leading to `32 + 20 = 52` bytes length.
+## Reference Implementation
 
-This is not a word boundary. Should have prefix byte?
-
-> NOTE
->
-> The verification process needs the signer's (may be aggregated) public key. It could come from storage, calldata... whatever.
->
-> The encoding SHOULD generally be via SEC's uncompressed (65 bytes) or compressed (33 bytes) standard.
-
-For both encoding `crysol` has an implementation. TODO: Make benchmarks.
+A reference implementation is provided in [verklegarden/crysol](https://github.com/verklegarden/crysol)
 
 
 <!--- References --->
 [^baby-step-giant-step-wikipedia]:[Wikipedia: Baby-step giant-step Algorithm](https://en.wikipedia.org/wiki/Baby-step_giant-step)
-[^vitalik-ethresearch-post]:[ethresear.ch: You can kinda abuse ecrecode to do ecmul in secp256k1 today](https://ethresear.ch/t/you-can-kinda-abuse-ecrecover-to-do-ecmul-in-secp256k1-today/2384)
+[^vitalik-ethresearch-post]:[ethresear.ch: You can kinda abuse ecrecover to do ecmul in secp256k1 today](https://ethresear.ch/t/you-can-kinda-abuse-ecrecover-to-do-ecmul-in-secp256k1-today/2384)
