@@ -2,7 +2,7 @@
 
 This repository contains information about the Schnorr signature scheme and its (possible) applications on Ethereum and other EVM-based chains.
 
-For discussion, don't hesitate to join [our telegram group](https://t.me/+Vg2lFXt9dtI0ZmMy).
+For discussion, don't hesitate to join the [telegram group](https://t.me/+Vg2lFXt9dtI0ZmMy).
 
 ## Table of Contents
 
@@ -10,4 +10,4 @@ For discussion, don't hesitate to join [our telegram group](https://t.me/+Vg2lFX
 - Use Case Studies
     - [Musig2 Multi-Signature Scheme](./use-cases/Musig2.md)
     - [FROST Threshold Signature Scheme](./use-cases/FROST.md)
-    - [Scribe](./use-cases/Scribe.md)
+    - [Scribe Oracle](./use-cases/Scribe.md)

@@ -1,4 +1,4 @@
-# EIP-XXXX A Schnorr Signature Scheme for Ethereum
+# ERC-XXXX A Schnorr Signature Scheme for Ethereum
 
 This document specifies an EVM-efficient Schnorr signature scheme over the secp256k1 elliptic curve in combination with the keccak256 hash function.
 
@@ -39,7 +39,7 @@ Schnorr signatures provide a number of advantages compared to ECDSA signatures:
 - **Non-malleability**: Schnorr signatures are non-malleable
 - **Linearity**: Schnorr signatures have multi-signature support, ie they provide a mechanism for collaborating parties to produce a signature that is valid over the sum of their public keys
 
-Also they are heavily used by Bitcoin, see BIP-340.
+Also they are heavily used by Bitcoin, see [BIP-340](https://github.com/bitcoin/bips/blob/ad1d3bc2a7b0d84247c29f847e85c35283094e2f/bip-0340.mediawiki).
 
 
 ## Conventions and Definitions
@@ -88,6 +88,8 @@ Schnorr signatures are tagged as _Ethereum Schnorr Signed Messages_:
 
 4. Construct challenge `e = H(Pkₓ ‖ Pkₚ ‖ m ‖ Rₑ) % Q`.
 
+> NOTE
+>
 > Modulo bias is ok, see BIP-340.
 > Note that the probability of `keccak256(sk ‖ m) ∊ {0, Q}` is negligible.
 
@@ -150,16 +152,18 @@ Therefore, this signing scheme does not weaken the overall security.
 
 ## Ethereum Schnorr Signed Message Digest
 
+Need domain separator to prevent ...
+
 
 ## Nonce Generation
 
 > WARNING
 >
-> A secret key may sign the same message via two different schemes, eg Schnorr and ECDSA. If both nonce generations use same algorithm the secret key gets leaked via nonce reuse!
+> A secret key may sign the same message via two different schemes, eg Schnorr and ECDSA. If both nonce generations use same algorithm the secret key may leak due to nonce reuse!
 >
-> General mechanism should be: Domain separator (?)
+> Therefore always use the domain separator
 
-BIP-340: "For example, if the rand value was computed as per RFC6979 and the same secret key is used in deterministic ECDSA with RFC6979, the signatures can leak the secret key through nonce reuse."
+BIP-340: "For example, if the rand value was computed as per RFC-6979 and the same secret key is used in deterministic ECDSA with RFC-6979, the signatures can leak the secret key through nonce reuse."
 
 TODO: Do we also need curve inside of domain hash? What if Schnorr used on r1?
 ```
@@ -231,7 +235,7 @@ N  = Qr * Pkₓ⁻¹                                                         | Q
 
 ## Reference Implementation
 
-A reference implementation is provided in [verklegarden/crysol](https://github.com/verklegarden/crysol)
+A reference implementation is provided in [verklegarden/crysol](https://github.com/verklegarden/crysol/pull/26)
 
 
 <!--- References --->
