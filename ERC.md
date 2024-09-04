@@ -177,4 +177,4 @@ N  = Qr * Pkₓ⁻¹                                                         | Q
 [^1]:[Security Arguments for Digital Signatures and Blind Signatures](https://www.di.ens.fr/david.pointcheval/Documents/Papers/2000_joc.pdf)
 [^2]:[BIP-0340](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki#cite_note-13)
 [^3]:[Baby-step giant-step Algorithm](https://en.wikipedia.org/wiki/Baby-step_giant-step)
-[^3]:[Vitalik "You can *kinda* abuse ECRECOVER to do ECMUL in secp256k1 today"](https://ethresear.ch/t/you-can-kinda-abuse-ecrecover-to-do-ecmul-in-secp256k1-today/2384)
+[^4]:[Vitalik "You can *kinda* abuse ECRECOVER to do ECMUL in secp256k1 today"](https://ethresear.ch/t/you-can-kinda-abuse-ecrecover-to-do-ecmul-in-secp256k1-today/2384)
