@@ -32,9 +32,9 @@ Using the hash function $H$, we define the following additional domain separated
 
 $$
 \begin{aligned}
-&H_{message}(x)   &= H(“message”   \Vert x) \ (\text{mod}\ Q) \\
-&H_{challenge}(x) &= H(“challenge” \Vert x) \ (\text{mod}\ Q) \\
-&H_{nonce}(x)     &= H(“nonce”     \Vert x) \ (\text{mod}\ Q) \\
+&H_{message}(x)   &= H(“message”   &\Vert x) \ &(\text{mod}\ Q) \\
+&H_{challenge}(x) &= H(“challenge” &\Vert x) \ &(\text{mod}\ Q) \\
+&H_{nonce}(x)     &= H(“nonce”     &\Vert x) \ &(\text{mod}\ Q) \\
 \end{aligned}
 $$
 
