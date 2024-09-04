@@ -30,9 +30,9 @@ With the help of `ctx` we define our context aware, cryptographically secure, ha
 
 Using the hash function `H`, we define the following additional domain separated hash functions:
 
-* `H_message(x) = H(“message” ‖ x) (mod Q)`
-* `H_challenge(x) = H(“challenge” ‖ x) (mod Q)`
-* `H_nonce(x) = H(“nonce” ‖ x) (mod Q)`
+* `H₁(x) = H(“message” ‖ x) (mod Q)`
+* `H₂(x) = H(“challenge” ‖ x) (mod Q)`
+* `H₃(x) = H(“nonce” ‖ x) (mod Q)`
 
 Note that all hash functions derived from `H` are defined to return secp256k1 field elements via modular reduction with `Q`. While this generally may introduce a bias leading to non-uniformly random output, secp256k’1 order `Q` is sufficiently close to $2^{256}$ that the modulo bias is acceptable _(ref BIP-340)_. Note that the probability of any in this document defined hash function’s output being `0` is deemed negligible.
 
@@ -41,8 +41,8 @@ Note that all hash functions derived from `H` are defined to return secp256k1 fi
 A Schnorr signature is generated over a byte string `message`, under secret key `sk` and public key `Pk = [sk]G` by the following steps:
 
 1.  Derive the `message`'s domain separated hash digest `m` as specified in _Message Hash Construction_
-2.  Select a cryptographically secure, uniformly random nonce `k ∊ [1, Q)` as specified in _Nonce Generation_ and compute its public key `R = [k]G`. Let `R_e` be the commitment.
-3.  Compute the challenge `e = H_challenge(Pk_x ‖ Pk_p || m || R_e) (mod Q)`
+2.  Select a cryptographically secure, uniformly random nonce `k ∊ [1, Q)` as specified in _Nonce Generation_ and compute its public key `R = [k]G`. Let `Rₑ` be the commitment.
+3.  Compute the challenge `e = H₂(Pkₓ ‖ Pkₚ || m || Rₑ) (mod Q)`
 4.  Using secret key `sk`, compute the Fiat-Shamir response `s = k + (e * sk) (mod Q)`
 5.  Define the signature over `m` to be `sig = (s, R)`
 
@@ -50,26 +50,26 @@ A Schnorr signature is generated over a byte string `message`, under secret key 
 
 Validating the integrity of `m` using the public key `Pk` and the signature `sig` is performed as:
 
-1.  Parse `sig` as `(s, R)` and compute challenge `e = H_challenge(Pk_x ‖ Pk_p || m || R_e) (mod Q)`
-2.  Compute `R_e’ = ([s]G - [e]PK)_e = ...`
-3.  Output `1` if `R_e == R_e'` to indicate success, otherwise output `0`.
+1.  Parse `sig` as `(s, R)` and compute challenge `e = H₂(Pkₓ ‖ Pkₚ || m || Rₑ) (mod Q)`
+2.  Compute `Rₑ’ = ([s]G - [e]PK)ₑ = ...`
+3.  Output `1` if `Rₑ == Rₑ'` to indicate success, otherwise output `0`.
 
 Note that the verification is based on `R`'s Ethereum address and not on the public key itself. In order to perform the verification’s `mulmuladd` operation efficiently the `ecrecover` precompile can be abused for secp256k1. For more info, see _Implementation Notes_.
 
 ## Message Hash Construction
 
 1.  Compute message digest `d = keccak256(message)`
-2.  Compute the message hash `m = H_message(d)`
+2.  Compute the message hash `m = H₁(d)`
 
 In order to guarantee constant calldata size this Schnorr signature scheme does not accept arbitrary length messages. A context aware hash function is used to ensure the message hash cannot be reinterpreted in a different context.
 
 ## Nonce Generation
 
-The nonce MUST be computed with a 32-byte randomness value `rand` and the secret key `sk` via `H_nonce(rand ‖ sk)`.
+The nonce MUST be computed with a 32-byte randomness value `rand` and the secret key `sk` via `H₃(rand ‖ sk)`.
 
 Note that by combining the randomness value `rand` with the secret key the nonce generation is hedged against a bad RNG possibly used to source `rand`.
 
-Note that domain separating the nonce via the `H_nonce` function is necessary to prevent secret key leakage due to nonce reuse when the same `rand` value is sourced for different signature schemes. The same `rand` value may be sourced when using deterministic methods such as RFC-6979.
+Note that domain separating the nonce via the `H₃` function is necessary to prevent secret key leakage due to nonce reuse when the same `rand` value is sourced for different signature schemes. The same `rand` value may be sourced when using deterministic methods such as RFC-6979.
 
 **Sourcing** `rand`
 
@@ -99,7 +99,7 @@ Note that this Schnorr scheme uses `R`'s Ethereum address instead of the public 
 
 ## Rationale
 
-Schnorr signature schemes exist in many different flavors. This Schnorr signature scheme chooses the signature to be `(s, R)` instead of `(e, R)` for closer behavior to Bitcoin’s BIP-340. Note that eventhough the signature is verified via `R_e`, it is still defined via `R` to ensure forward compatibility with Schnorr schemes based on aggregated public keys.
+Schnorr signature schemes exist in many different flavors. This Schnorr signature scheme chooses the signature to be `(s, R)` instead of `(e, R)` for closer behavior to Bitcoin’s BIP-340. Note that eventhough the signature is verified via `Rₑ`, it is still defined via `R` to ensure forward compatibility with Schnorr schemes based on aggregated public keys.
 
 Additionally this Schnorr scheme is _key prefixed_ to protect against “related-key attacks” meaning the public key is prefixed to the challenge hash `e`. Note that instead of prefixing the key in Affine coordinate, the public key’s `x` coordinate and `y` coordinate’s parity are used to potentially reduce EVM memory expansion costs.
 
@@ -147,7 +147,7 @@ r       = Pkₓ
 s       = Q - (e * Pkₓ)
 ```
 
-Note that `ecrecover` returns the Ethereum address `R_e` and not `R` itself.
+Note that `ecrecover` returns the Ethereum address `Rₑ` and not `R` itself.
 
 The `ecrecover` call then digests to:
 
