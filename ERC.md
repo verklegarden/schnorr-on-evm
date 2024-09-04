@@ -10,7 +10,7 @@ EVM applications have traditionally used ECDSA signatures over secp256k1 in comb
 
 * **Linearity**: Schnorr signatures are linear which allows them to be easily aggregated, i.e. it enables multiple collaborating parties to produce a signature that is valid over the sum of their public keys. This building block allows for higher level constructions such as multisignatures and threshold signatures.
 
-* **Provable security**: Schnorr signatures are provable secure with weaker assumptions than the best known security proofs for ECDSA. More specifically, Schnorr signatures are strongly unforgeable under chosen message attack[^1] (_SUF-CMA_) in the random oracle model (_ROM_) assuming the hardness of the elliptic curve discrete logarithm problem (_ECDLP_).
+* **Provable security**: Schnorr signatures are provable secure with weaker assumptions than the best known security proofs for ECDSA. More specifically, Schnorr signatures are strongly unforgeable under chosen message attack (_SUF-CMA_) in the random oracle model (_ROM_) assuming the hardness of the elliptic curve discrete logarithm problem (_ECDLP_)[^1].
 
 * **Non-Malleability**: Schnorr signatures are non-malleable. Note that on the other hand ECDSA signatures are malleable which has lead to numerous security issues.
 
@@ -20,7 +20,7 @@ In contrast to BLS (multi-) signatures, Schnorr signatures are far more efficien
 
 The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “NOT RECOMMENDED”, “MAY”, and “OPTIONAL” in this document are to be interpreted as described in RFC-2119 and RFC-8174 when, and only when, they appear in all capitals, as shown here.
 
-Let `G` be secp256k1’s generator and `Q` secp256k1’s order. Let `sk` be an secp256k1 secret key and `Pk = [sk]G` be the secret key’s public key in Affine coordinates. Let `Pkₑ` be a public key’s Ethereum address, `Pkₓ` a public key’s `x` coordinate, and `Pkₚ` a public key’s `y` coordinate’s parity of size 1 byte with `1` if `y` is even and `0` if `y` is odd. Let `‖` be the concatenation operator performing a byte-wise concatenation.
+Let `G` be secp256k1’s generator and `Q` secp256k1’s order. Let `sk` be an secp256k1 secret key and `Pk = [sk]G` be the secret key’s public key in affine coordinates. Let `Pkₑ` be a public key’s Ethereum address, `Pkₓ` a public key’s `x` coordinate, and `Pkₚ` a public key’s `y` coordinate’s parity of size 1 byte with `1` if `y` is even and `0` if `y` is odd. Let `‖` be the concatenation operator performing a byte-wise concatenation.
 
 ## Hash Functions
 
@@ -34,7 +34,7 @@ Using the hash function `H`, we define the following additional domain separated
 * `H₂(x) = H(“challenge” ‖ x) (mod Q)`
 * `H₃(x) = H(“nonce” ‖ x) (mod Q)`
 
-Note that all hash functions derived from `H` are defined to return secp256k1 field elements via modular reduction with `Q`. While this generally may introduce a bias leading to non-uniformly random output, secp256k’1 order `Q` is sufficiently close to $2^{256}$ that the modulo bias is acceptable _(ref BIP-340)_. Note that the probability of any in this document defined hash function’s output being `0` is deemed negligible.
+Note that all hash functions derived from `H` are defined to return secp256k1 field elements via modular reduction with `Q`. While this generally may introduce a bias leading to non-uniformly random output, secp256k’1 order `Q` is sufficiently close to $2^{256}$ that the modulo bias is acceptable[^2]. Note that the probability of any in this document defined hash function’s output being `0` is deemed negligible.
 
 ## Signature Creation
 
@@ -95,13 +95,13 @@ A Schnorr signature can be compressed encoded to 52 bytes via compressing the pu
 
 ## Security Considerations
 
-Note that this Schnorr scheme uses `R`'s Ethereum address instead of the public key itself, thereby decreasing the security of brute-forcing the signature from 256 bits (trying random secp256k1 points) to 160 bits (trying random Ethereum addresses). However, the difficulty of cracking a secp256k1 public key using the baby-step giant-step algorithm is `O(√Q)`. Note that `√Q ~= 3.4e38 < 128 bit`. Therefore, this scheme does not weaken the overall security.
+Note that this Schnorr scheme uses `R`'s Ethereum address instead of the public key itself, thereby decreasing the security of brute-forcing the signature from 256 bits (trying random secp256k1 points) to 160 bits (trying random Ethereum addresses). However, the difficulty of cracking a secp256k1 public key using the baby-step giant-step algorithm is `O(√Q)`. Note that `√Q ~= 3.4e38 < 128 bit`[^3]. Therefore, this scheme does not weaken the overall security.
 
 ## Rationale
 
 Schnorr signature schemes exist in many different flavors. This Schnorr signature scheme chooses the signature to be `(s, R)` instead of `(e, R)` for closer behavior to Bitcoin’s BIP-340. Note that eventhough the signature is verified via `Rₑ`, it is still defined via `R` to ensure forward compatibility with Schnorr schemes based on aggregated public keys.
 
-Additionally this Schnorr scheme is _key prefixed_ to protect against “related-key attacks” meaning the public key is prefixed to the challenge hash `e`. Note that instead of prefixing the key in Affine coordinate, the public key’s `x` coordinate and `y` coordinate’s parity are used to potentially reduce EVM memory expansion costs.
+Additionally this Schnorr scheme is _key prefixed_ to protect against “related-key attacks” meaning the public key is prefixed to the challenge hash `e`. Note that instead of prefixing the key in affine coordinate, the public key’s `x` coordinate and `y` coordinate’s parity are used to potentially reduce EVM memory expansion costs.
 
 ## Test Cases
 
@@ -121,7 +121,7 @@ A reference implementation is provided in [verklegarden/crysol](https://github.c
 
 ### Elliptic Curve `mulmuladd`
 
-In order to verify Schnorr signatures a `mulmuladd` operation must be performed over secp256k1. As Vitalik notes _(ref: Magician post)_, the `ecrecover` precompile can be abused to perform such an operation, with the caveat that the result is not returned as elliptic curve point but rather as Ethereum address.
+In order to verify Schnorr signatures a `mulmuladd` operation must be performed over secp256k1. As Vitalik notes, the `ecrecover` precompile can be abused to perform such an operation, with the caveat that the result is not returned as elliptic curve point but rather as Ethereum address[^4].
 
 The `ecrecover` precompile can roughly be implemented in python via:
 
@@ -175,3 +175,6 @@ N  = Qr * Pkₓ⁻¹                                                         | Q
 
 <!-- References -->
 [^1]:[Security Arguments for Digital Signatures and Blind Signatures](https://www.di.ens.fr/david.pointcheval/Documents/Papers/2000_joc.pdf)
+[^2]:[BIP-0340](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki#cite_note-13)
+[^3]:[Baby-step giant-step Algorithm](https://en.wikipedia.org/wiki/Baby-step_giant-step)
+[^3]:[Vitalik "You can *kinda* abuse ECRECOVER to do ECMUL in secp256k1 today"](https://ethresear.ch/t/you-can-kinda-abuse-ecrecover-to-do-ecmul-in-secp256k1-today/2384)
