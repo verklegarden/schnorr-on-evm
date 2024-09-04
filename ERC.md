@@ -26,13 +26,13 @@ Let `G` be secp256k1’s generator and `Q` secp256k1’s order. Let `sk` be an s
 
 We define the ASCII context string `ctx` containing our scheme and ciphersuite as `ETHEREUM-SCHNORR-SECP256K1-KECCAK256`. This enables domain separating our hash functions and ensures a signed message intended for one context is never deemed valid in a different context. It is RECOMMENDED that future signature schemes define a context string in the same pattern.
 
-With the help of `ctx` we define our context aware, cryptographically secure, hash function `H` as `H(x) = keccak256(ctx || x)`.
+With the help of `ctx` we define our context aware, cryptographically secure, hash function `H` as `H(x) = keccak256(ctx ‖ x)`.
 
 Using the hash function `H`, we define the following additional domain separated hash functions:
 
-* `H_message(x) = H(“message” || x) (mod Q)`
-* `H_challenge(x) = H(“challenge” || x) (mod Q)`
-* `H_nonce(x) = H(“nonce” || x) (mod Q)`
+* `H_message(x) = H(“message” ‖ x) (mod Q)`
+* `H_challenge(x) = H(“challenge” ‖ x) (mod Q)`
+* `H_nonce(x) = H(“nonce” ‖ x) (mod Q)`
 
 Note that all hash functions derived from `H` are defined to return secp256k1 field elements via modular reduction with `Q`. While this generally may introduce a bias leading to non-uniformly random output, secp256k’1 order `Q` is sufficiently close to $2^{256}$ that the modulo bias is acceptable _(ref BIP-340)_. Note that the probability of any in this document defined hash function’s output being `0` is deemed negligible.
 
@@ -42,7 +42,7 @@ A Schnorr signature is generated over a byte string `message`, under secret key 
 
 1.  Derive the `message`'s domain separated hash digest `m` as specified in _Message Hash Construction_
 2.  Select a cryptographically secure, uniformly random nonce `k ∊ [1, Q)` as specified in _Nonce Generation_ and compute its public key `R = [k]G`. Let `R_e` be the commitment.
-3.  Compute the challenge `e = H_challenge(Pk_x || Pk_p || m || R_e) (mod Q)`
+3.  Compute the challenge `e = H_challenge(Pk_x ‖ Pk_p || m || R_e) (mod Q)`
 4.  Using secret key `sk`, compute the Fiat-Shamir response `s = k + (e * sk) (mod Q)`
 5.  Define the signature over `m` to be `sig = (s, R)`
 
@@ -50,7 +50,7 @@ A Schnorr signature is generated over a byte string `message`, under secret key 
 
 Validating the integrity of `m` using the public key `Pk` and the signature `sig` is performed as:
 
-1.  Parse `sig` as `(s, R)` and compute challenge `e = H_challenge(Pk_x || Pk_p || m || R_e) (mod Q)`
+1.  Parse `sig` as `(s, R)` and compute challenge `e = H_challenge(Pk_x ‖ Pk_p || m || R_e) (mod Q)`
 2.  Compute `R_e’ = ([s]G - [e]PK)_e = ...`
 3.  Output `1` if `R_e == R_e'` to indicate success, otherwise output `0`.
 
@@ -65,7 +65,7 @@ In order to guarantee constant calldata size this Schnorr signature scheme does 
 
 ## Nonce Generation
 
-The nonce MUST be computed with a 32-byte randomness value `rand` and the secret key `sk` via `H_nonce(rand || sk)`.
+The nonce MUST be computed with a 32-byte randomness value `rand` and the secret key `sk` via `H_nonce(rand ‖ sk)`.
 
 Note that by combining the randomness value `rand` with the secret key the nonce generation is hedged against a bad RNG possibly used to source `rand`.
 
