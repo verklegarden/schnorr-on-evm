@@ -71,7 +71,7 @@ Note that by combining the randomness value `rand` with the secret key the nonce
 
 Note that domain separating the nonce via the `H₃` function is necessary to prevent secret key leakage due to nonce reuse when the same `rand` value is sourced for different signature schemes. The same `rand` value may be sourced when using deterministic methods such as RFC-6979.
 
-**Sourcing** `rand`
+### Sourcing `rand`
 
 The 32 byte `rand` value may be sourced via different methods, e.g. using a CSPRNG or computing it via RFC-6979. However, it MUST be guaranteed that `rand` is not reused for signatures signing different messages.
 
@@ -85,7 +85,7 @@ A Schnorr signature `sig = (s, R) = (s, (x, y))` is encoded in 96 bytes via:
 [s 32 bytes][x 32 bytes][y 32 bytes]
 ```
 
-**Compressed Encoding**
+### Compressed Encoding
 
 A Schnorr signature can be compressed encoded to 52 bytes via compressing the public key `R` to its Ethereum address:
 
