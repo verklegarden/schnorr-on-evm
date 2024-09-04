@@ -40,9 +40,9 @@ Note that all hash functions derived from `H` are defined to return secp256k1 fi
 
 A Schnorr signature is generated over a byte string `message`, under secret key `sk` and public key `Pk = [sk]G` by the following steps:
 
-1.  Derive the `message`'s domain separated hash digest `m` as specified in _Message Hash Construction_
-2.  Select a cryptographically secure, uniformly random nonce `k ∊ [1, Q)` as specified in _Nonce Generation_ and compute its public key `R = [k]G`. Let `Rₑ` be the commitment.
-3.  Compute the challenge `e = H₂(Pkₓ ‖ Pkₚ || m || Rₑ) (mod Q)`
+1.  Derive the `message`'s domain separated hash digest `m` as specified in [_Message Hash Construction_](#message-hash-construction)
+2.  Select a cryptographically secure, uniformly random nonce `k ∊ [1, Q)` as specified in [_Nonce Generation_](#nonce-generation) and compute its public key `R = [k]G`. Let `Rₑ` be the commitment.
+3.  Compute the challenge `e = H₂(Pkₓ ‖ Pkₚ ‖ m ‖ Rₑ) (mod Q)`
 4.  Using secret key `sk`, compute the Fiat-Shamir response `s = k + (e * sk) (mod Q)`
 5.  Define the signature over `m` to be `sig = (s, R)`
 
@@ -50,11 +50,11 @@ A Schnorr signature is generated over a byte string `message`, under secret key 
 
 Validating the integrity of `m` using the public key `Pk` and the signature `sig` is performed as:
 
-1.  Parse `sig` as `(s, R)` and compute challenge `e = H₂(Pkₓ ‖ Pkₚ || m || Rₑ) (mod Q)`
+1.  Parse `sig` as `(s, R)` and compute challenge `e = H₂(Pkₓ ‖ Pkₚ ‖ m ‖ Rₑ) (mod Q)`
 2.  Compute `Rₑ’ = ([s]G - [e]PK)ₑ`
 3.  Output `1` if `Rₑ == Rₑ'` to indicate success, otherwise output `0`.
 
-Note that the verification is based on `R`'s Ethereum address and not on the public key itself. In order to perform the verification’s `mulmuladd` operation efficiently the `ecrecover` precompile can be abused for secp256k1. For more info, see _Implementation Notes_.
+Note that the verification is based on `R`'s Ethereum address and not on the public key itself. In order to perform the verification’s `mulmuladd` operation efficiently the `ecrecover` precompile can be abused for secp256k1. For more info, see [_Implementation Notes_](#implementation-notes).
 
 ## Message Hash Construction
 
