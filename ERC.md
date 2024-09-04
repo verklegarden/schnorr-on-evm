@@ -30,9 +30,13 @@ With the help of $ctx$ we define our context aware, cryptographically secure, ha
 
 Using the hash function $H$, we define the following additional domain separated hash functions:
 
-* $H_{message}(x) = H(“message” || x) (mod Q)$
-* $H_{challenge}(x) = H(“challenge” || x) (mod Q)$
-* $H_{nonce}(x) = H(“nonce” || x) (mod Q)$
+$$
+\begin{aligned}
+&H_{message}(x)   &= H(“message”   \Vert x) \ (\text{mod}\ Q) \\
+&H_{challenge}(x) &= H(“challenge” \Vert x) \ (\text{mod}\ Q) \\
+&H_{nonce}(x)     &= H(“nonce”     \Vert x) \ (\text{mod}\ Q) \\
+\end{aligned}
+$$
 
 Note that all hash functions derived from $H$ are defined to return secp256k1 field elements via modular reduction with $Q$. While this generally may introduce a bias leading to non-uniformly random output, secp256k’1 order $Q$ is sufficiently close to $2^{256}$ that the modulo bias is acceptable _(ref BIP-340)_. Note that the probability of any in this document defined hash function’s output being 0 is deemed negligible.
 
