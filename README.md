@@ -6,8 +6,8 @@ For discussion, don't hesitate to join the [telegram group](https://t.me/+Vg2lFX
 
 ## Table of Contents
 
-- [EIP-XXX: Schnorr on EVM](./ERC.md)
+- [ERC-XXX: A Schnorr Signature Scheme for EVM Applications](./ERC.md)
 - Use Case Studies
     - [FROST Threshold Signature Scheme](./use-cases/FROST.md)
-    - [Musig2 Multi-Signature Scheme](./use-cases/Musig2.md)
+    - [Musig2 Multisignature Scheme](./use-cases/Musig2.md)
     - [Scribe Oracle](./use-cases/Scribe.md)

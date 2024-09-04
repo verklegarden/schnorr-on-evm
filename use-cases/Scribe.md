@@ -2,4 +2,4 @@
 
 See [Scribe](https://github.com/chronicleprotocol/scribe).
 
-Pushed the boundaries in terms of gas efficient multi signature updates.
+Pushed the boundaries in terms of gas efficient multisignature updates.
