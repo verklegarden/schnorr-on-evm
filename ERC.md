@@ -10,7 +10,7 @@ EVM applications have traditionally used ECDSA signatures over secp256k1 in comb
 
 * **Linearity**: Schnorr signatures are linear which allows them to be easily aggregated, i.e. it enables multiple collaborating parties to produce a signature that is valid over the sum of their public keys. This building block allows for higher level constructions such as multisignatures and threshold signatures.
 
-* **Provable security**: Schnorr signatures are provable secure with weaker assumptions than the best known security proofs for ECDSA. More specifically, Schnorr signatures are strongly unforgeable under chosen message attack (_SUF-CMA_) in the random oracle model (_ROM_) assuming the hardness of the elliptic curve discrete logarithm problem (_ECDLP_).
+* **Provable security**: Schnorr signatures are provable secure with weaker assumptions than the best known security proofs for ECDSA. More specifically, Schnorr signatures are strongly unforgeable under chosen message attack[^1] (_SUF-CMA_) in the random oracle model (_ROM_) assuming the hardness of the elliptic curve discrete logarithm problem (_ECDLP_).
 
 * **Non-Malleability**: Schnorr signatures are non-malleable. Note that on the other hand ECDSA signatures are malleable which has lead to numerous security issues.
 
@@ -51,7 +51,7 @@ A Schnorr signature is generated over a byte string `message`, under secret key 
 Validating the integrity of `m` using the public key `Pk` and the signature `sig` is performed as:
 
 1.  Parse `sig` as `(s, R)` and compute challenge `e = H₂(Pkₓ ‖ Pkₚ || m || Rₑ) (mod Q)`
-2.  Compute `Rₑ’ = ([s]G - [e]PK)ₑ = ...`
+2.  Compute `Rₑ’ = ([s]G - [e]PK)ₑ`
 3.  Output `1` if `Rₑ == Rₑ'` to indicate success, otherwise output `0`.
 
 Note that the verification is based on `R`'s Ethereum address and not on the public key itself. In order to perform the verification’s `mulmuladd` operation efficiently the `ecrecover` precompile can be abused for secp256k1. For more info, see _Implementation Notes_.
@@ -172,3 +172,6 @@ N  = Qr * Pkₓ⁻¹                                                         | Q
    = [sig]G - [e * sk]G                                                 | Pk = [sk]G
    = [sig]G - [e]Pk
 ```
+
+<!-- References -->
+[^1]:[Security Arguments for Digital Signatures and Blind Signatures](https://www.di.ens.fr/david.pointcheval/Documents/Papers/2000_joc.pdf)
