@@ -51,7 +51,7 @@ A Schnorr signature is generated over a byte string `message`, under secret key 
 Validating the integrity of `m` using the public key `Pk` and the signature `sig` is performed as:
 
 1.  Parse `sig` as `(s, R)` and compute challenge `e = H₂(Pkₓ ‖ Pkₚ ‖ m ‖ Rₑ) (mod Q)`
-2.  Compute `Rₑ’ = ([s]G - [e]PK)ₑ`
+2.  Compute `Rₑ’ = ([s]G - [e]Pk)ₑ`
 3.  Output `1` if `Rₑ == Rₑ'` to indicate success, otherwise output `0`.
 
 Note that the verification is based on `R`'s Ethereum address and not on the public key itself. In order to perform the verification’s `mulmuladd` operation efficiently the `ecrecover` precompile can be abused for secp256k1. For more info, see [_Implementation Notes_](#implementation-notes).
@@ -95,7 +95,7 @@ A Schnorr signature can be compressed encoded to 52 bytes via compressing the pu
 
 ## Security Considerations
 
-Note that this Schnorr scheme uses `R`'s Ethereum address instead of the public key itself, thereby decreasing the security of brute-forcing the signature from 256 bits (trying random secp256k1 points) to 160 bits (trying random Ethereum addresses). However, the difficulty of cracking a secp256k1 public key using the baby-step giant-step algorithm is `O(√Q)`. Note that `√Q ~= 3.4e38 < 128 bit`[^3]. Therefore, this scheme does not weaken the overall security.
+Note that this Schnorr scheme uses `R`'s Ethereum address instead of the public key itself, thereby decreasing the security of brute-forcing the signature from 256 bits (trying random secp256k1 points) to 160 bits (trying random Ethereum addresses). However, the difficulty of cracking a secp256k1 public key using the baby-step giant-step algorithm is `O(√Q)`[^3]. Note that `√Q ~= 3.4e38 < 128 bit`. Therefore, this scheme does not weaken the overall security.
 
 ## Rationale
 
