@@ -75,7 +75,7 @@ Note that domain separating the nonce via the `H₃` function is necessary to pr
 
 The 32 byte `rand` value may be sourced via different methods, e.g. using a CSPRNG or computing it via RFC-6979. However, it MUST be guaranteed that `rand` is not reused for signatures signing different messages.
 
-Furthermore, it is NOT RECOMMENDED to source `rand` deterministically. Note that this Schnorr scheme is compatible with multisignature and threshold signature schemes where a signer’s secret key does not match the public key the signature is created for. This property makes such schemes in general **insecure with deterministic nonce generation**.
+Furthermore, it is NOT RECOMMENDED to source `rand` deterministically. Note that this Schnorr scheme is compatible with multisignature and threshold signature schemes where a signer’s secret key does not match the public key the signature is created for. This property makes such schemes in general **insecure with deterministic nonce generation**. Additionally, creating nonces independently of signed messages may allow for a preprocessing stage in higher-level protocols where participants generate and publish nonce commitments prior to signing.
 
 ## Encoding
 
