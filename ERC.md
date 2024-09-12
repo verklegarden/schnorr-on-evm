@@ -18,7 +18,7 @@ In contrast to BLS (multi-) signatures, Schnorr signatures are far more efficien
 
 ## Specification
 
-The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “NOT RECOMMENDED”, “MAY”, and “OPTIONAL” in this document are to be interpreted as described in RFC-2119 and RFC-8174 when, and only when, they appear in all capitals, as shown here.
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC-2119 and RFC-8174 when, and only when, they appear in all capitals, as shown here.
 
 Let `G` be secp256k1’s generator and `Q` secp256k1’s order. Let `sk` be an secp256k1 secret key and `Pk = [sk]G` be the secret key’s public key in affine coordinates. Let `Pkₑ` be a public key’s Ethereum address, `Pkₓ` a public key’s `x` coordinate, and `Pkₚ` a public key’s `y` coordinate’s parity of size 1 byte with `1` if `y` is even and `0` if `y` is odd. Let `‖` be the concatenation operator performing a byte-wise concatenation.
 
@@ -30,9 +30,9 @@ With the help of `ctx` we define our context aware, cryptographically secure, ha
 
 Using the hash function `H`, we define the following additional domain separated hash functions:
 
-* `H₁(x) = H(“message” ‖ x) (mod Q)`
-* `H₂(x) = H(“challenge” ‖ x) (mod Q)`
-* `H₃(x) = H(“nonce” ‖ x) (mod Q)`
+* `H₁(x) = H("message" ‖ x) (mod Q)`
+* `H₂(x) = H("challenge" ‖ x) (mod Q)`
+* `H₃(x) = H("nonce" ‖ x) (mod Q)`
 
 Note that all hash functions derived from `H` are defined to return secp256k1 field elements via modular reduction with `Q`. While this generally may introduce a bias leading to non-uniformly random output, secp256k’1 order `Q` is sufficiently close to $2^{256}$ that the modulo bias is acceptable[^2]. Note that the probability of any in this document defined hash function’s output being `0` is deemed negligible.
 
@@ -95,13 +95,13 @@ A Schnorr signature can be compressed encoded to 52 bytes via compressing the pu
 
 ## Security Considerations
 
-Note that this Schnorr scheme uses `R`'s Ethereum address instead of the public key itself, thereby decreasing the security of brute-forcing the signature from 256 bits (trying random secp256k1 points) to 160 bits (trying random Ethereum addresses). However, the difficulty of cracking a secp256k1 public key using the baby-step giant-step algorithm is `O(√Q)`[^3]. Note that `√Q ~= 3.4e38 < 128 bit`. Therefore, this scheme does not weaken the overall security.
+Note that this Schnorr scheme uses `R`'s Ethereum address instead of the public key itself, thereby decreasing the security of brute-forcing the signature from 256 bits (trying random secp256k1 points) to 160 bits (trying random Ethereum addresses). However, the difficulty of cracking a secp256k1 public key using the baby-step giant-step algorithm is `O(√Q)`[^3]. Note that `√Q ~= 3.4e38 > 127 bit`. Therefore, this scheme does not weaken the overall security.
 
 ## Rationale
 
 Schnorr signature schemes exist in many different flavors. This Schnorr signature scheme chooses the signature to be `(s, R)` instead of `(e, R)` for closer behavior to Bitcoin’s BIP-340. Note that eventhough the signature is verified via `Rₑ`, it is still defined via `R` to ensure forward compatibility with Schnorr schemes based on aggregated public keys.
 
-Additionally this Schnorr scheme is _key prefixed_ to protect against “related-key attacks” meaning the public key is prefixed to the challenge hash `e`. Note that instead of prefixing the key in affine coordinate, the public key’s `x` coordinate and `y` coordinate’s parity are used to potentially reduce EVM memory expansion costs.
+Additionally this Schnorr scheme is _key prefixed_ to protect against "related-key attacks" meaning the public key is prefixed to the challenge hash `e`. Note that instead of prefixing the key in affine coordinate, the public key’s `x` coordinate and `y` coordinate’s parity are used to potentially reduce EVM memory expansion costs.
 
 ## Test Cases
 
