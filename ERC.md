@@ -95,7 +95,7 @@ A Schnorr signature can be compressed encoded to 52 bytes via compressing the pu
 
 ## Security Considerations
 
-Note that this Schnorr scheme uses `R`'s Ethereum address instead of the public key itself, thereby decreasing the security of brute-forcing the signature from 256 bits (trying random secp256k1 points) to 160 bits (trying random Ethereum addresses). However, the difficulty of cracking a secp256k1 public key using the baby-step giant-step algorithm is `O(√Q)`[^3]. Note that `√Q ~= 3.4e38 > 127 bit`. Therefore, this scheme does not weaken the overall security.
+Note that this Schnorr scheme uses `R`'s Ethereum address instead of the public key itself, thereby decreasing the security of brute-forcing the signature from 256 bits (trying random secp256k1 points) to 160 bits (trying random Ethereum addresses). However, the difficulty of cracking a secp256k1 public key using the baby-step giant-step algorithm is `O(√Q)`[^3]. Note that `√Q ~= 3.4e38 < 128 bit`. Therefore, this scheme does not weaken the overall security.
 
 ## Rationale
 
@@ -167,7 +167,7 @@ Qr = Gz + XY                                            | Gz = [(k + (e * sk)) *
 N  = Qr * Pkₓ⁻¹                                                         | Qr = [(k + (e * sk)) * Pkₓ]G + [(Q - (e * Pkₓ)) * sk]G
    = [(k + (e * sk)) * Pkₓ]G + [(Q - (e * Pkₓ)) * sk]G * Pkₓ⁻¹          | Distributive law
    = [(k + (e * sk)) * Pkₓ * Pkₓ⁻¹]G + [(Q - (e * Pkₓ)) * sk * Pkₓ⁻¹]G  | Pkₓ * Pkₓ⁻¹ = 1
-   = [(k + (e * sk))]G + [Q - e * sk]G                                  | signature = k + (e * sk)
+   = [(k + (e * sk))]G + [Q - e * sk]G                                  | sig = k + (e * sk)
    = [sig]G + [Q - e * x]G                                              | Q - (e * sk) = -(e * sk) in (mod Q)
    = [sig]G - [e * sk]G                                                 | Pk = [sk]G
    = [sig]G - [e]Pk
