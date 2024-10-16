@@ -2,7 +2,7 @@
 
 ## Abstract
 
-This document proposes a standard for Schnorr signatures over the elliptic curve secp256k1 for EVM applications.
+This document specifies a Schnorr signatures over the elliptic curve secp256k1 for EVM applications.
 
 ## Motivation
 
@@ -42,7 +42,7 @@ A Schnorr signature is generated over a byte string `message`, under secret key 
 
 1.  Derive the `message`'s domain separated hash digest `m` as specified in [_Message Hash Construction_](#message-hash-construction)
 2.  Select a cryptographically secure, uniformly random nonce `k ∊ [1, Q)` as specified in [_Nonce Generation_](#nonce-generation) and compute its public key `R = [k]G`. Let `Rₑ` be the commitment
-3.  Compute the challenge `e = H₂(Rₑ ‖ Pkₑ ‖ m) (mod Q)`
+3.  Compute the challenge `e = H₂(Rₑ ‖ Pkₓ ‖ Pkₚ ‖ m) (mod Q)`
 4.  Using secret key `sk`, compute the Fiat-Shamir response `s = k + (e * sk) (mod Q)`
 5.  Define the signature over `m` to be `sig = (s, R)`
 
@@ -52,7 +52,7 @@ Validating the integrity of `m` using the public key `Pk` and the signature `sig
 
 1. Parse `sig` as `(s, R)` if default encoded and `(s, Rₑ)` if compressed encoded
 2. Verify `s ∊ [1, Q)`, otherwise output `0`
-3. Compute challenge `e = H₂(Rₑ ‖ Pkₑ ‖ m) (mod Q)`
+3. Compute challenge `e = H₂(Rₑ ‖ Pkₓ ‖ Pkₚ ‖ m) (mod Q)`
 4. Compute `R'ₑ = ([s]G - [e]Pk)ₑ`
 5. Output `1` if `Rₑ == R'ₑ` to indicate success, otherwise output `0`
 
@@ -119,7 +119,7 @@ Wagner's birthday attack can be prevents via either introducing an additional _n
 
 Schnorr signature schemes exist in many different flavors. This Schnorr signature scheme chooses the signature to be `(s, R)` instead of `(e, R)` for closer behavior to Bitcoin’s BIP-340. Note that eventhough the signature is verified via `Rₑ`, it is still defined via `R` to ensure forward compatibility with Schnorr schemes based on aggregated public keys.
 
-Additionally this Schnorr scheme is _key prefixed_ to protect against "related-key attacks" meaning the public key is prefixed to the challenge hash `e`. Note that instead of prefixing the key in affine coordinate, the public key’s `x` coordinate and `y` coordinate’s parity are used to potentially reduce EVM storage and memory costs.
+Additionally this Schnorr scheme is _key prefixed_ to protect against "related-key attacks" meaning the public key is prefixed to the message in the challenge hash input[^2]. Note that instead of prefixing the key in affine coordinates, the public key’s `x` coordinate and `y` coordinate’s parity are used to not increase the verifier's resource usage by either computing or storing the full `y` coordinate.
 
 ## Test Cases
 
