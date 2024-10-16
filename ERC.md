@@ -34,14 +34,14 @@ Using the hash function `H`, we define the following additional domain separated
 * `H₂(x) = H("challenge" ‖ x) (mod Q)`
 * `H₃(x) = H("nonce" ‖ x) (mod Q)`
 
-Note that all hash functions derived from `H` are defined to return secp256k1 field elements via modular reduction with `Q`. While this generally may introduce a bias leading to non-uniformly random output, secp256k’1 order `Q` is sufficiently close to $2^{256}$ that the modulo bias is acceptable[^2]. Note that the probability of any in this document defined hash function’s output being `0` is deemed negligible.
+Note that all hash functions derived from `H` are defined to return elements in `[1, Q)` via modular reduction with `Q`. While this generally introduces a bias leading to non-uniformly random output, secp256k’1 order `Q` is sufficiently close to $2^{256}$ that the modulo bias is acceptable[^2]. Note that the probability of any in this document defined hash function’s output being `0` is deemed negligible.
 
 ## Signature Creation
 
 A Schnorr signature is generated over a byte string `message`, under secret key `sk` and public key `Pk = [sk]G` by the following steps:
 
 1.  Derive the `message`'s domain separated hash digest `m` as specified in [_Message Hash Construction_](#message-hash-construction)
-2.  Select a cryptographically secure, uniformly random nonce `k ∊ [1, Q)` as specified in [_Nonce Generation_](#nonce-generation) and compute its public key `R = [k]G`. Let `Rₑ` be the commitment.
+2.  Select a cryptographically secure, uniformly random nonce `k ∊ [1, Q)` as specified in [_Nonce Generation_](#nonce-generation) and compute its public key `R = [k]G`. Let `Rₑ` be the commitment
 3.  Compute the challenge `e = H₂(Pkₓ ‖ Pkₚ ‖ m ‖ Rₑ) (mod Q)`
 4.  Using secret key `sk`, compute the Fiat-Shamir response `s = k + (e * sk) (mod Q)`
 5.  Define the signature over `m` to be `sig = (s, R)`
@@ -50,9 +50,11 @@ A Schnorr signature is generated over a byte string `message`, under secret key 
 
 Validating the integrity of `m` using the public key `Pk` and the signature `sig` is performed as:
 
-1.  Parse `sig` as `(s, R)` and compute challenge `e = H₂(Pkₓ ‖ Pkₚ ‖ m ‖ Rₑ) (mod Q)`
-2.  Compute `Rₑ’ = ([s]G - [e]Pk)ₑ`
-3.  Output `1` if `Rₑ == Rₑ'` to indicate success, otherwise output `0`.
+1. Parse `sig` as `(s, R)` if default encoded and `(s, Rₑ)` if compressed encoded
+2. Verify `s ∊ [1, Q)`, otherwise output `0`
+3. Compute challenge `e = H₂(Pkₓ ‖ Pkₚ ‖ m ‖ Rₑ) (mod Q)`
+4. Compute `R'ₑ = ([s]G - [e]Pk)ₑ`
+5. Output `1` if `Rₑ == R'ₑ` to indicate success, otherwise output `0`
 
 Note that the verification is based on `R`'s Ethereum address and not on the public key itself. In order to perform the verification’s `mulmuladd` operation efficiently the `ecrecover` precompile can be abused for secp256k1. For more info, see [_Implementation Notes_](#implementation-notes).
 
@@ -101,7 +103,23 @@ Note that this Schnorr scheme uses `R`'s Ethereum address instead of the public 
 
 Schnorr signature schemes exist in many different flavors. This Schnorr signature scheme chooses the signature to be `(s, R)` instead of `(e, R)` for closer behavior to Bitcoin’s BIP-340. Note that eventhough the signature is verified via `Rₑ`, it is still defined via `R` to ensure forward compatibility with Schnorr schemes based on aggregated public keys.
 
-Additionally this Schnorr scheme is _key prefixed_ to protect against "related-key attacks" meaning the public key is prefixed to the challenge hash `e`. Note that instead of prefixing the key in affine coordinate, the public key’s `x` coordinate and `y` coordinate’s parity are used to potentially reduce EVM memory expansion costs.
+Additionally this Schnorr scheme is _key prefixed_ to protect against "related-key attacks" meaning the public key is prefixed to the challenge hash `e`. Note that instead of prefixing the key in affine coordinate, the public key’s `x` coordinate and `y` coordinate’s parity are used to potentially reduce EVM storage and memory costs.
+
+### Signature Malleability
+
+While Schnorr signatures as specified in this document are not malleable due to the definition of `s`, great care must be taken during verification to ensure a Schnorr signatures `s ∊ [1, Q)`. Note that this issue is mentioned explicitly due to Solidity's weak type system and the expectation of most implementation using type `uint256` for the `s` variable.
+
+### Rogue Key Attacks
+
+Rogue key attacks are a serious concern for Schnorr multisignature and threshold signature schemes where a subset of malicious participants use public keys computed as functions of public keys from honest participants allowing them to produce forgeries for the total set of public keys[^4].
+
+Rogue key attacks can be prevented via a knowledge of secret key (KOSK) assumption, i.e. requiring participants to prove knowledge of the secret key during public key registration, or non-trivial public key aggregation schemes[^4][^5].
+
+### Wagner's Birthday Attack
+
+Another serious concern for multisignature and threshold signature schemes is Wagner's birthday attack, where malicious participants can manipulate a final aggregated nonce used for signing by submitting rogue nonces[^6].
+
+Wagner's birthday attack can be prevents via either introducing an additional _nonce commitment_ communication round in the scheme or non-trivial nonce aggregation schemes[^5][^6].
 
 ## Test Cases
 
@@ -111,17 +129,13 @@ Additionally this Schnorr scheme is _key prefixed_ to protect against "related-k
 
 ## Reference Implementation
 
-> [!NOTE]
->
-> Reference implementation still work-in-progress
-
-A reference implementation is provided in [verklegarden/crysol](https://github.com/verklegarden/crysol/pull/26).
+A reference implementation is provided in [verklegarden/crysol](https://github.com/verklegarden/crysol).
 
 ## Implementation Notes
 
 ### Elliptic Curve `mulmuladd`
 
-In order to verify Schnorr signatures a `mulmuladd` operation must be performed over secp256k1. As Vitalik notes, the `ecrecover` precompile can be abused to perform such an operation, with the caveat that the result is not returned as elliptic curve point but rather as Ethereum address[^4].
+In order to verify Schnorr signatures a `mulmuladd` operation must be performed over secp256k1. As Vitalik notes, the `ecrecover` precompile can be abused to perform such an operation, with the caveat that the result is not returned as elliptic curve point but rather as Ethereum address[^7].
 
 The `ecrecover` precompile can roughly be implemented in python via:
 
@@ -136,9 +150,9 @@ def ecdsa_raw_recover(msghash, vrs):
    return from_jacobian(N)
 ```
 
-Note that ecrecover also uses `s` as variable. From this point forward, let the Schnorr signature's `s` be `sig`.
+Note that `ecrecover` also uses `s` as variable. From this point forward, let the Schnorr signature's `s` be `sig`.
 
-A single ecrecover call can compute `([sig]G - [e]Pk)ₑ = ([k]G)ₑ = Rₑ` via the following inputs:
+A single `ecrecover` call can compute `([sig]G - [e]Pk)ₑ = ([k]G)ₑ = Rₑ` via the following inputs:
 
 ```
 msghash = -sig * Pkₓ
@@ -177,4 +191,7 @@ N  = Qr * Pkₓ⁻¹                                                         | Q
 [^1]:[Security Arguments for Digital Signatures and Blind Signatures](https://www.di.ens.fr/david.pointcheval/Documents/Papers/2000_joc.pdf)
 [^2]:[BIP-0340](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki#cite_note-13)
 [^3]:[Baby-step giant-step Algorithm](https://en.wikipedia.org/wiki/Baby-step_giant-step)
-[^4]:[Vitalik "You can *kinda* abuse ECRECOVER to do ECMUL in secp256k1 today"](https://ethresear.ch/t/you-can-kinda-abuse-ecrecover-to-do-ecmul-in-secp256k1-today/2384)
+[^4]:[Musig](https://eprint.iacr.org/2018/068.pdf)
+[^5]:[Musig2](https://eprint.iacr.org/2020/1261.pdf)
+[^6]:[On the Security of Two-Round Multi-Signatures](https://eprint.iacr.org/2018/417.pdf)
+[^7]:[Vitalik "You can *kinda* abuse ECRECOVER to do ECMUL in secp256k1 today"](https://ethresear.ch/t/you-can-kinda-abuse-ecrecover-to-do-ecmul-in-secp256k1-today/2384)
