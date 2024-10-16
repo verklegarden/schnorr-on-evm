@@ -42,7 +42,7 @@ A Schnorr signature is generated over a byte string `message`, under secret key 
 
 1.  Derive the `message`'s domain separated hash digest `m` as specified in [_Message Hash Construction_](#message-hash-construction)
 2.  Select a cryptographically secure, uniformly random nonce `k ∊ [1, Q)` as specified in [_Nonce Generation_](#nonce-generation) and compute its public key `R = [k]G`. Let `Rₑ` be the commitment
-3.  Compute the challenge `e = H₂(Pkₑ ‖ m ‖ Rₑ) (mod Q)`
+3.  Compute the challenge `e = H₂(Rₑ ‖ Pkₑ ‖ m) (mod Q)`
 4.  Using secret key `sk`, compute the Fiat-Shamir response `s = k + (e * sk) (mod Q)`
 5.  Define the signature over `m` to be `sig = (s, R)`
 
@@ -52,7 +52,7 @@ Validating the integrity of `m` using the public key `Pk` and the signature `sig
 
 1. Parse `sig` as `(s, R)` if default encoded and `(s, Rₑ)` if compressed encoded
 2. Verify `s ∊ [1, Q)`, otherwise output `0`
-3. Compute challenge `e = H₂(Pkₑ ‖ m ‖ Rₑ) (mod Q)`
+3. Compute challenge `e = H₂(Rₑ ‖ Pkₑ ‖ m) (mod Q)`
 4. Compute `R'ₑ = ([s]G - [e]Pk)ₑ`
 5. Output `1` if `Rₑ == R'ₑ` to indicate success, otherwise output `0`
 
