@@ -99,12 +99,6 @@ A Schnorr signature can be compressed encoded to 52 bytes via compressing the pu
 
 Note that this Schnorr scheme uses `R`'s Ethereum address instead of the public key itself, thereby decreasing the security of brute-forcing the signature from 256 bits (trying random secp256k1 points) to 160 bits (trying random Ethereum addresses). However, the difficulty of cracking a secp256k1 public key using the baby-step giant-step algorithm is `O(√Q)`[^3]. Note that `√Q ~= 3.4e38 < 128 bit`. Therefore, this scheme does not weaken the overall security.
 
-## Rationale
-
-Schnorr signature schemes exist in many different flavors. This Schnorr signature scheme chooses the signature to be `(s, R)` instead of `(e, R)` for closer behavior to Bitcoin’s BIP-340. Note that eventhough the signature is verified via `Rₑ`, it is still defined via `R` to ensure forward compatibility with Schnorr schemes based on aggregated public keys.
-
-Additionally this Schnorr scheme is _key prefixed_ to protect against "related-key attacks" meaning the public key is prefixed to the challenge hash `e`. Note that instead of prefixing the key in affine coordinate, the public key’s `x` coordinate and `y` coordinate’s parity are used to potentially reduce EVM storage and memory costs.
-
 ### Signature Malleability
 
 While Schnorr signatures as specified in this document are not malleable due to the definition of `s`, great care must be taken during verification to ensure a Schnorr signatures `s ∊ [1, Q)`. Note that this issue is mentioned explicitly due to Solidity's weak type system and the expectation of most implementation using type `uint256` for the `s` variable.
@@ -120,6 +114,12 @@ Rogue key attacks can be prevented via a knowledge of secret key (KOSK) assumpti
 Another serious concern for multisignature and threshold signature schemes is Wagner's birthday attack, where malicious participants can manipulate a final aggregated nonce used for signing by submitting rogue nonces[^6].
 
 Wagner's birthday attack can be prevents via either introducing an additional _nonce commitment_ communication round in the scheme or non-trivial nonce aggregation schemes[^5][^6].
+
+## Rationale
+
+Schnorr signature schemes exist in many different flavors. This Schnorr signature scheme chooses the signature to be `(s, R)` instead of `(e, R)` for closer behavior to Bitcoin’s BIP-340. Note that eventhough the signature is verified via `Rₑ`, it is still defined via `R` to ensure forward compatibility with Schnorr schemes based on aggregated public keys.
+
+Additionally this Schnorr scheme is _key prefixed_ to protect against "related-key attacks" meaning the public key is prefixed to the challenge hash `e`. Note that instead of prefixing the key in affine coordinate, the public key’s `x` coordinate and `y` coordinate’s parity are used to potentially reduce EVM storage and memory costs.
 
 ## Test Cases
 
