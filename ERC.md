@@ -81,14 +81,6 @@ Furthermore, it is NOT RECOMMENDED to source `rand` deterministically. Note that
 
 ## Encoding
 
-> [!IMPORTANT]
->
-> It can be argued to reduce the default encoding to 65 bytes, ie [s][x][y parity].
-> However, this is not a word boundary and would lead to 31 empty bytes calldata.
->
-> Note that computing a y coordinate onchain costs ~9k gas (in crysol).
-> Note that the calldata savings are (31 * 16) - (31 * 4) = 372 gas.
-
 A Schnorr signature `sig = (s, R) = (s, (x, y))` is encoded in 96 bytes via:
 
 ```
