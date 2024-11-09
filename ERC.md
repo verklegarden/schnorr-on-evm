@@ -2,7 +2,7 @@
 
 ## Abstract
 
-This document specifies a Schnorr signatures over the elliptic curve secp256k1 for EVM applications.
+This document specifies a Schnorr signature scheme over the elliptic curve secp256k1 for EVM applications.
 
 ## Motivation
 
